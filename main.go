@@ -23,17 +23,18 @@ import (
 //BaseMysql possui principais metodos para execução select, insert update e delete em
 //banco mysql, mantém 1 conexão ativa sem pool
 type BaseMysql interface {
-	//conexao *sql.DB
 	connect(hostname string, dbname string, username string, password string) *sql.DB
 	FetchLines(query string, values []string, options []string)
 }
 
-type db struct {
+//Db mantem conexao com banco MySQL
+//Provê métodos para update/insert/select
+type Db struct {
 	con *sql.DB //conexão banco
 }
 
 //Connect mantém conexao ativa com banco
-func (db *db) Connect(dbUser, dbPassword, dbHostname, dbPort, database string) error {
+func (db *Db) Connect(dbUser, dbPassword, dbHostname, dbPort, database string) error {
 	con, err := sql.Open("mysql", fmt.Sprintf(
 		"%s:%s@tcp(%s:%s)/%s",
 		dbUser,
@@ -49,11 +50,13 @@ func (db *db) Connect(dbUser, dbPassword, dbHostname, dbPort, database string) e
 	return nil
 }
 
-func (db *db) Close() {
+//Close encerra conexao com banco MySQL
+func (db *Db) Close() {
 	db.con.Close()
 }
 
-func (db *db) FetchLines(table string, selectFields []string, where string, valuesWhere []interface{}) (result *[]interface{}, er error) { //options []string
+//FetchLines retorna select de campos fornecidos em slice de strings
+func (db *Db) FetchLines(table string, selectFields []string, where string, valuesWhere []interface{}) (result *[]interface{}, er error) { //options []string
 	//log::info(__METHOD__ . " option is " . $option . " padrao é:" . PDO::FETCH_BOTH);
 	query := fmt.Sprintf("SELECT %s FROM %s WHERE %s",
 		strings.Join(selectFields, ", "), table, where)
@@ -111,7 +114,8 @@ func (db *db) FetchLines(table string, selectFields []string, where string, valu
 // 	}
 // }
 
-func (db *db) Update(table string, id uint, columns map[string]string) (sql.Result, error) {
+//Update realiza update de linhas selecionadas por where
+func (db *Db) Update(table string, id uint, columns map[string]string) (sql.Result, error) {
 	var sqlColumns, values []string
 	for i, v := range columns {
 		sqlColumns = append(sqlColumns, fmt.Sprintf("`%s` = ?", i))
@@ -138,7 +142,7 @@ func (db *db) Update(table string, id uint, columns map[string]string) (sql.Resu
 	return result, nil
 }
 
-func (db *db) delete(table, id string) (sql.Result, error) {
+func (db *Db) delete(table, id string) (sql.Result, error) {
 	stmt, err := db.con.Prepare(fmt.Sprintf("DELETE FROM `%s` WHERE `ID` = ?", table))
 	result, err := stmt.Exec(id)
 	if err != nil {
@@ -147,7 +151,7 @@ func (db *db) delete(table, id string) (sql.Result, error) {
 	return result, nil
 }
 
-func (db *db) startTransaction() (sql.Result, error) {
+func (db *Db) startTransaction() (sql.Result, error) {
 	stmt, err := db.con.Prepare("START TRANSACTION")
 	if err != nil {
 		panic("ERRO AO Prepare query")
@@ -159,7 +163,7 @@ func (db *db) startTransaction() (sql.Result, error) {
 	return result, nil
 }
 
-func (db *db) commit() (sql.Result, error) {
+func (db *Db) commit() (sql.Result, error) {
 	stmt, err := db.con.Prepare("COMMIT")
 	if err != nil {
 		return nil, fmt.Errorf("UNABLE TO PREPARE COMMIT: %v", err)
@@ -171,7 +175,7 @@ func (db *db) commit() (sql.Result, error) {
 	return result, nil
 }
 
-func (db *db) rollback() (sql.Result, error) {
+func (db *Db) rollback() (sql.Result, error) {
 	stmt, err := db.con.Prepare("ROLLBACK")
 	if err != nil {
 		return nil, fmt.Errorf("UNABLE TO PREPARE ROLLBACK: %v", err)
