@@ -9,38 +9,21 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-//SQLExecError diferente de nil quando alguma execução
-//SQL falha
-// type SQLExecError struct {
-// 	When time.Time
-// 	What string
-// }
-
-// func (e *SQLExecError) Error() string {
-// 	return fmt.Sprintf("As %v, %s", e.When, e.What)
-// }
-
-//BaseMysql possui principais metodos para execução select, insert update e delete em
-//banco mysql, mantém 1 conexão ativa sem pool
-type BaseMysql interface {
-	connect(hostname string, dbname string, username string, password string) *sql.DB
-	FetchLines(query string, values []string, options []string)
-}
-
 //Db mantem conexao com banco MySQL
 //Provê métodos para update/insert/select
 type Db struct {
-	con *sql.DB //conexão banco
+	con                                  *sql.DB //conexão banco
+	User, Password, Host, Port, Database string
 }
 
 //Connect mantém conexao ativa com banco
-func (db *Db) Connect(dbUser, dbPassword, dbHostname, dbPort, database string) error {
+func (db *Db) Connect() error {
 	con, err := sql.Open("mysql", fmt.Sprintf(
 		"%s:%s@tcp(%s:%s)/%s",
-		dbUser,
-		dbPassword,
-		dbHostname,
-		dbPort, database))
+		db.User,
+		db.Password,
+		db.Host,
+		db.Port, db.Database))
 
 	if err != nil {
 		return fmt.Errorf("Erro ao conectar banco: %v", err)

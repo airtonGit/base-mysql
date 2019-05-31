@@ -6,8 +6,8 @@ import (
 )
 
 func TestUpdate(t *testing.T) {
-	var banco db
-	banco.Connect("root", "eunaouso", "127.0.0.1", "3307", "projeto_connection")
+	banco := Db{User: "root", Password: "eunaouso", Host: "127.0.0.1", Port: "3307", Database: "projeto_connection"}
+	banco.Connect()
 	defer banco.Close()
 
 	var m map[string]string
@@ -24,8 +24,10 @@ func TestUpdate(t *testing.T) {
 }
 
 func TestFetchLines(t *testing.T) {
-	var banco db
-	banco.Connect("root", "eunaouso", "127.0.0.1", "3307", "projeto_connection")
+	// var banco db
+	// banco.Connect("root", "eunaouso", "127.0.0.1", "3307", "projeto_connection")
+	banco := Db{User: "root", Password: "eunaouso", Host: "127.0.0.1", Port: "3307", Database: "projeto_connection"}
+	banco.Connect()
 	defer banco.Close()
 
 	campos := []string{"name", "cpf"}
