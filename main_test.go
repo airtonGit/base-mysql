@@ -41,3 +41,14 @@ func TestFetchLines(t *testing.T) {
 		fmt.Println("Falha ao select: ", err)
 	}
 }
+
+func TestInsertRegion(t *testing.T) {
+	banco := Db{User: "root", Password: "eunaouso", Host: "127.0.0.1", Port: "3307", Database: "projeto_connection"}
+	banco.Connect()
+	defer banco.Close()
+
+	//colunas := []string{"id", "date_created", "date_modified", "name", "description"}
+
+	banco.InsertRegion("AirtonRegion")
+
+}
