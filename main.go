@@ -69,16 +69,17 @@ func (db *Db) FetchLines(table string, selectFields []string, where string, valu
 }
 
 //InsertRegion adiciona nova linha na tabela com campos e valores
-func (db *Db) InsertRegion(name string) {
+func (db *Db) InsertRegion(name string) (int64, error) {
 	query := "INSERT INTO region (name) VALUES (?);"
 	stmt, err := db.con.Prepare(query)
 	if err != nil {
 		panic("FAIL TO PREPARE INSERT")
 	}
-	_, err = stmt.Exec(name)
+	res, err := stmt.Exec(name)
 	if err != nil {
 		panic("UNABLE TO INSERT OBJECT")
 	}
+	return res.LastInsertId()
 }
 
 // func (db *db) Insert(table string, row interface{}) { //columns map[string]string) {
