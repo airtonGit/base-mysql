@@ -68,48 +68,28 @@ func (db *Db) FetchLines(table string, selectFields []string, where string, valu
 	return &scannedRows, nil
 }
 
-//InsertRegion adiciona nova linha na tabela com campos e valores
-func (db *Db) InsertRegion(name string) (int64, error) {
-	query := "INSERT INTO region (name) VALUES (?);"
+//Insert - Adiciona nova linha na tabela informada, deve-se informar todas as colunas na mesma ordem dos campos na declaração da tabela.
+func (db *Db) Insert(table string, columnsValue []interface{}) (int64, error) {
+	var sqlAnchors []string
+
+	for range columnsValue {
+		sqlAnchors = append(sqlAnchors, "?")
+	}
+
+	query := fmt.Sprintf(
+		"INSERT INTO `%s` VALUES (%s);",
+		table,
+		strings.Join(sqlAnchors, ", "))
 	stmt, err := db.con.Prepare(query)
 	if err != nil {
-		panic("FAIL TO PREPARE INSERT")
+		return -1, fmt.Errorf("FAIL TO PREPARE INSERT error: %s", err.Error())
 	}
-	res, err := stmt.Exec(name)
+	result, err := stmt.Exec(columnsValue...)
 	if err != nil {
-		panic("UNABLE TO INSERT OBJECT")
+		return -1, fmt.Errorf("UNABLE TO INSERT OBJECT error: %s", err.Error())
 	}
-	return res.LastInsertId()
+	return result.LastInsertId()
 }
-
-// func (db *db) Insert(table string, row interface{}) { //columns map[string]string) {
-// 	var sqlColumns, sqlValues, values []string
-
-// 	for i, v := range columns {
-// 		sqlColumns = append(sqlColumns, fmt.Sprintf("`%s`", i)) //preciso do key - nome da coluna e nao seu valor
-// 		sqlValues = append(sqlValues, "?")
-// 		values = append(values, v)
-// 	}
-// 	query := fmt.Sprintf(
-// 		"INSERT INTO `%s` (%s) VALUES (%s);",
-// 		table,
-// 		strings.Join(sqlColumns, ", "),
-// 		strings.Join(sqlValues, ", "))
-// 	stmt, err := db.con.Prepare(query)
-// 	if err != nil {
-// 		panic("FAIL TO PREPARE INSERT")
-// 	}
-// 	args := make([]interface{}, len(values))
-// 	for i, v := range values {
-// 		args[i] = v
-// 	}
-// 	result, err := stmt.Exec(args...)
-// 	if err != nil {
-// 		panic("UNABLE TO INSERT OBJECT")
-// 	} else {
-// 		//return self::$conn->lastInsertId();
-// 	}
-// }
 
 //Update realiza update de linhas selecionadas por where
 func (db *Db) Update(table string, id uint, columns map[string]string) (sql.Result, error) {

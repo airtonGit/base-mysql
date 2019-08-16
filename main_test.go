@@ -3,6 +3,7 @@ package basemysql
 import (
 	"fmt"
 	"testing"
+	"time"
 )
 
 func TestUpdate(t *testing.T) {
@@ -42,13 +43,29 @@ func TestFetchLines(t *testing.T) {
 	}
 }
 
-func TestInsertRegion(t *testing.T) {
+func TestInsert(t *testing.T) {
 	banco := Db{User: "root", Password: "eunaouso", Host: "127.0.0.1", Port: "3307", Database: "projeto_connection"}
 	banco.Connect()
 	defer banco.Close()
 
-	//colunas := []string{"id", "date_created", "date_modified", "name", "description"}
+	agora := time.Now()
+	agoraMysql := agora.Format("2006-01-02 15:04:05")
+	fmt.Println("Agora", agoraMysql)
+	var tests = []struct {
+		input []interface{}
+		want  int64
+	}{
+		/*caso de teste*/ {
+			/* input */ []interface{}{nil, "Airton Teste1", agoraMysql, agoraMysql, "Desc1"}, // region id, date_created, date_modified, name, description
+			/* want param */ 1},
+		{
+			/* input */ []interface{}{nil, "Airton Teste2", agoraMysql, agoraMysql, "Desc2"},
+			/* want param */ 1}}
 
-	banco.InsertRegion("AirtonRegion")
+	for _, test := range tests {
+		if got, err := banco.Insert("region", test.input); got < 0 || err != nil {
+			t.Errorf("Insert(%s, %s) = %d", "region", test.input, got)
+		}
+	}
 
 }
