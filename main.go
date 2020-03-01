@@ -12,7 +12,9 @@ import (
 //Db mantem conexao com banco MySQL
 //Provê métodos para update/insert/select
 type Db struct {
-	con                                  *sql.DB //conexão banco
+	con *sql.DB //conexão banco
+	//Conn deve substituir con em futura versão major
+	Conn                                 *sql.DB //conexão banco
 	User, Password, Host, Port, Database string
 }
 
@@ -29,6 +31,7 @@ func (db *Db) Connect() error {
 		return fmt.Errorf("Erro ao conectar banco: %v", err)
 	}
 	db.con = con
+	db.Conn = con
 	// TODO defer db.Close()
 	return nil
 }
