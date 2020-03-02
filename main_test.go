@@ -48,9 +48,7 @@ func TestInsert(t *testing.T) {
 	banco.Connect()
 	defer banco.Close()
 
-	agora := time.Now()
-	agoraMysql := agora.Format("2006-01-02 15:04:05")
-	fmt.Println("Agora", agoraMysql)
+	agoraMysql := time.Now().Format("2006-01-02 15:04:05")
 	var tests = []struct {
 		input []interface{}
 		want  int64
@@ -59,7 +57,7 @@ func TestInsert(t *testing.T) {
 			/* input */ []interface{}{nil, "Airton Teste1", agoraMysql, agoraMysql, "Desc1"}, // region id, date_created, date_modified, name, description
 			/* want param */ 1},
 		{
-			/* input */ []interface{}{nil, "Airton Teste2", agoraMysql, agoraMysql, "Desc2"},
+			/* input */ []interface{}{nil, "Airton Teste3", agoraMysql, agoraMysql, "Desc2"},
 			/* want param */ 1}}
 
 	for _, test := range tests {

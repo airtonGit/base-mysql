@@ -12,7 +12,9 @@ import (
 //Db mantem conexao com banco MySQL
 //Provê métodos para update/insert/select
 type Db struct {
-	Con                                  *sql.DB //conexão banco
+	con *sql.DB //conexão banco
+	//Conn deve substituir con em futura versão major
+	Conn                                 *sql.DB //conexão banco
 	User, Password, Host, Port, Database string
 }
 
@@ -28,14 +30,16 @@ func (db *Db) Connect() error {
 	if err != nil {
 		return fmt.Errorf("Erro ao conectar banco: %v", err)
 	}
-	db.Con = con
+
+	db.con = con
+	db.Conn = con
 	// TODO defer db.Close()
 	return nil
 }
 
 //Close encerra conexao com banco MySQL
 func (db *Db) Close() {
-	db.Con.Close()
+	db.con.Close()
 }
 
 //FetchLines retorna select de campos fornecidos em slice de strings
@@ -43,7 +47,7 @@ func (db *Db) FetchLines(table string, selectFields []string, where string, valu
 	//log::info(__METHOD__ . " option is " . $option . " padrao é:" . PDO::FETCH_BOTH);
 	query := fmt.Sprintf("SELECT %s FROM %s WHERE %s",
 		strings.Join(selectFields, ", "), table, where)
-	rows, err := db.Con.Query(query, valuesWhere...)
+	rows, err := db.con.Query(query, valuesWhere...)
 	if err != nil {
 		return nil, fmt.Errorf("FAIL TO PREPARE SELECT: %v", err)
 	}
@@ -80,7 +84,7 @@ func (db *Db) Insert(table string, columnsValue []interface{}) (int64, error) {
 		"INSERT INTO `%s` VALUES (%s);",
 		table,
 		strings.Join(sqlAnchors, ", "))
-	stmt, err := db.Con.Prepare(query)
+	stmt, err := db.con.Prepare(query)
 	if err != nil {
 		return -1, fmt.Errorf("FAIL TO PREPARE INSERT error: %s", err.Error())
 	}
@@ -104,7 +108,7 @@ func (db *Db) Update(table string, id uint, columns map[string]string) (sql.Resu
 		table,
 		strings.Join(sqlColumns, ", "),
 		id)
-	stmt, err := db.Con.Prepare(query)
+	stmt, err := db.con.Prepare(query)
 	if err != nil {
 		return nil, fmt.Errorf("FAIL TO PREPARE UPDATE QUERY: %v", err)
 	}
@@ -120,7 +124,7 @@ func (db *Db) Update(table string, id uint, columns map[string]string) (sql.Resu
 }
 
 func (db *Db) delete(table, id string) (sql.Result, error) {
-	stmt, err := db.Con.Prepare(fmt.Sprintf("DELETE FROM `%s` WHERE `ID` = ?", table))
+	stmt, err := db.con.Prepare(fmt.Sprintf("DELETE FROM `%s` WHERE `ID` = ?", table))
 	result, err := stmt.Exec(id)
 	if err != nil {
 		return nil, fmt.Errorf("UNABLE TO DELETE OBJECT: %v", err)
@@ -129,7 +133,7 @@ func (db *Db) delete(table, id string) (sql.Result, error) {
 }
 
 func (db *Db) startTransaction() (sql.Result, error) {
-	stmt, err := db.Con.Prepare("START TRANSACTION")
+	stmt, err := db.con.Prepare("START TRANSACTION")
 	if err != nil {
 		panic("ERRO AO Prepare query")
 	}
@@ -141,7 +145,7 @@ func (db *Db) startTransaction() (sql.Result, error) {
 }
 
 func (db *Db) commit() (sql.Result, error) {
-	stmt, err := db.Con.Prepare("COMMIT")
+	stmt, err := db.con.Prepare("COMMIT")
 	if err != nil {
 		return nil, fmt.Errorf("UNABLE TO PREPARE COMMIT: %v", err)
 	}
@@ -153,7 +157,7 @@ func (db *Db) commit() (sql.Result, error) {
 }
 
 func (db *Db) rollback() (sql.Result, error) {
-	stmt, err := db.Con.Prepare("ROLLBACK")
+	stmt, err := db.con.Prepare("ROLLBACK")
 	if err != nil {
 		return nil, fmt.Errorf("UNABLE TO PREPARE ROLLBACK: %v", err)
 	}
