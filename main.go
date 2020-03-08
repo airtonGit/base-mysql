@@ -16,6 +16,7 @@ type Db struct {
 	//Conn deve substituir con em futura versão major
 	Conn                                 *sql.DB //conexão banco
 	User, Password, Host, Port, Database string
+	connected                            bool
 }
 
 //Connect mantém conexao ativa com banco
@@ -26,11 +27,9 @@ func (db *Db) Connect() error {
 		db.Password,
 		db.Host,
 		db.Port, db.Database))
-
 	if err != nil {
 		return fmt.Errorf("Erro ao conectar banco: %v", err)
 	}
-
 	db.con = con
 	db.Conn = con
 	// TODO defer db.Close()
@@ -42,9 +41,24 @@ func (db *Db) Close() {
 	db.con.Close()
 }
 
+func (db *Db) checkConnection() error {
+	if db.connected == false {
+		err := db.Connect()
+		if err != nil {
+			return fmt.Errorf("checkConnection Falha: %s", err.Error())
+		}
+		db.connected = true
+	}
+	return nil
+}
+
 //FetchLines retorna select de campos fornecidos em slice de strings
 func (db *Db) FetchLines(table string, selectFields []string, where string, valuesWhere []interface{}) (result *[]interface{}, er error) { //options []string
 	//log::info(__METHOD__ . " option is " . $option . " padrao é:" . PDO::FETCH_BOTH);
+	errCon := db.checkConnection()
+	if errCon != nil {
+		return nil, errCon
+	}
 	query := fmt.Sprintf("SELECT %s FROM %s WHERE %s",
 		strings.Join(selectFields, ", "), table, where)
 	rows, err := db.con.Query(query, valuesWhere...)
@@ -75,7 +89,10 @@ func (db *Db) FetchLines(table string, selectFields []string, where string, valu
 //Insert - Adiciona nova linha na tabela informada, deve-se informar todas as colunas na mesma ordem dos campos na declaração da tabela.
 func (db *Db) Insert(table string, columnsValue []interface{}) (int64, error) {
 	var sqlAnchors []string
-
+	errCon := db.checkConnection()
+	if errCon != nil {
+		return -1, errCon
+	}
 	for range columnsValue {
 		sqlAnchors = append(sqlAnchors, "?")
 	}
@@ -98,6 +115,10 @@ func (db *Db) Insert(table string, columnsValue []interface{}) (int64, error) {
 //Update realiza update de linhas selecionadas por where
 func (db *Db) Update(table string, id uint, columns map[string]string) (sql.Result, error) {
 	var sqlColumns, values []string
+	errCon := db.checkConnection()
+	if errCon != nil {
+		return nil, errCon
+	}
 	for i, v := range columns {
 		sqlColumns = append(sqlColumns, fmt.Sprintf("`%s` = ?", i))
 		values = append(values, v)
@@ -124,6 +145,10 @@ func (db *Db) Update(table string, id uint, columns map[string]string) (sql.Resu
 }
 
 func (db *Db) delete(table, id string) (sql.Result, error) {
+	errCon := db.checkConnection()
+	if errCon != nil {
+		return nil, errCon
+	}
 	stmt, err := db.con.Prepare(fmt.Sprintf("DELETE FROM `%s` WHERE `ID` = ?", table))
 	result, err := stmt.Exec(id)
 	if err != nil {
@@ -133,6 +158,10 @@ func (db *Db) delete(table, id string) (sql.Result, error) {
 }
 
 func (db *Db) startTransaction() (sql.Result, error) {
+	errCon := db.checkConnection()
+	if errCon != nil {
+		return nil, errCon
+	}
 	stmt, err := db.con.Prepare("START TRANSACTION")
 	if err != nil {
 		panic("ERRO AO Prepare query")
@@ -145,6 +174,10 @@ func (db *Db) startTransaction() (sql.Result, error) {
 }
 
 func (db *Db) commit() (sql.Result, error) {
+	errCon := db.checkConnection()
+	if errCon != nil {
+		return nil, errCon
+	}
 	stmt, err := db.con.Prepare("COMMIT")
 	if err != nil {
 		return nil, fmt.Errorf("UNABLE TO PREPARE COMMIT: %v", err)
@@ -157,6 +190,10 @@ func (db *Db) commit() (sql.Result, error) {
 }
 
 func (db *Db) rollback() (sql.Result, error) {
+	errCon := db.checkConnection()
+	if errCon != nil {
+		return nil, errCon
+	}
 	stmt, err := db.con.Prepare("ROLLBACK")
 	if err != nil {
 		return nil, fmt.Errorf("UNABLE TO PREPARE ROLLBACK: %v", err)

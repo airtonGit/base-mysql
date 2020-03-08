@@ -8,7 +8,7 @@ import (
 
 func TestUpdate(t *testing.T) {
 	banco := Db{User: "root", Password: "eunaouso", Host: "127.0.0.1", Port: "3307", Database: "projeto_connection"}
-	banco.Connect()
+	//banco.Connect()
 	defer banco.Close()
 
 	var m map[string]string
