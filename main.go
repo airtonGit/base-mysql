@@ -87,7 +87,7 @@ func (db *Db) FetchLines(table string, selectFields []string, where string, valu
 }
 
 //Insert - Adiciona nova linha na tabela informada, deve-se informar todas as colunas na mesma ordem dos campos na declaração da tabela.
-func (db *Db) Insert(table string, columnsValue []interface{}) (int64, error) {
+func (db *Db) Insert(table string, columns []string, columnsValue []interface{}) (int64, error) {
 	var sqlAnchors []string
 	errCon := db.checkConnection()
 	if errCon != nil {
@@ -96,10 +96,10 @@ func (db *Db) Insert(table string, columnsValue []interface{}) (int64, error) {
 	for range columnsValue {
 		sqlAnchors = append(sqlAnchors, "?")
 	}
-
 	query := fmt.Sprintf(
-		"INSERT INTO `%s` VALUES (%s);",
+		"INSERT INTO `%s`(%s) VALUES (%s);",
 		table,
+		strings.Join(columns, ", "),
 		strings.Join(sqlAnchors, ", "))
 	stmt, err := db.con.Prepare(query)
 	if err != nil {

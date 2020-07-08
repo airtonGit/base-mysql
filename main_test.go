@@ -54,14 +54,14 @@ func TestInsert(t *testing.T) {
 		want  int64
 	}{
 		/*caso de teste*/ {
-			/* input */ []interface{}{nil, "Airton Teste1", agoraMysql, agoraMysql, "Desc1"}, // region id, date_created, date_modified, name, description
+			/* input */ []interface{}{"Airton Teste1", agoraMysql, agoraMysql, "Desc1"}, // region id, date_created, date_modified, name, description
 			/* want param */ 1},
 		{
-			/* input */ []interface{}{nil, "Airton Teste3", agoraMysql, agoraMysql, "Desc2"},
+			/* input */ []interface{}{"Airton Teste3", agoraMysql, agoraMysql, "Desc2"},
 			/* want param */ 1}}
 
 	for _, test := range tests {
-		if got, err := banco.Insert("region", test.input); got < 0 || err != nil {
+		if got, err := banco.Insert("region", []string{"name","date_created","date_modified","description"}, test.input); got < 0 || err != nil {
 			t.Errorf("Insert(%s, %s) = %d", "region", test.input, got)
 		}
 	}
