@@ -11,7 +11,7 @@ import (
 )
 
 //Fields retorna []string campos da struct com tag field
-func Fields(values interface{}) []string {
+func (db *Db) Fields(values interface{}) []string {
 	v := reflect.ValueOf(values)
 	if v.Kind() == reflect.Ptr {
 		v = v.Elem()
