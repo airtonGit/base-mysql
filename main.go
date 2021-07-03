@@ -3,31 +3,11 @@ package basemysql
 import (
 	"database/sql"
 	"fmt"
-	"reflect"
 	"strings"
 
 	//Driver mysql para manter conexao com banco
 	_ "github.com/go-sql-driver/mysql"
 )
-
-//Fields retorna []string campos da struct com tag field
-func (db *Db) Fields(values interface{}) []string {
-	v := reflect.ValueOf(values)
-	if v.Kind() == reflect.Ptr {
-		v = v.Elem()
-	}
-	fields := []string{}
-	if v.Kind() == reflect.Struct {
-		for i := 0; i < v.NumField(); i++ {
-			field := v.Type().Field(i).Tag.Get("field")
-			if field != "" {
-				fields = append(fields, field)
-			}
-		}
-		return fields
-	}
-	panic(fmt.Errorf("DBFields requires a struct or a map, found: %s", v.Kind().String()))
-}
 
 //Db mantem conexao com banco MySQL
 //Provê métodos para update/insert/select
@@ -125,6 +105,7 @@ func (db *Db) Insert(table string, columns []string, columnsValue []interface{})
 	if err != nil {
 		return -1, fmt.Errorf("FAIL TO PREPARE INSERT error: %s", err.Error())
 	}
+	defer stmt.Close()
 	result, err := stmt.Exec(columnsValue...)
 	if err != nil {
 		return -1, fmt.Errorf("UNABLE TO INSERT OBJECT error: %s", err.Error())
@@ -153,6 +134,7 @@ func (db *Db) Update(table string, id uint, columns map[string]string) (sql.Resu
 	if err != nil {
 		return nil, fmt.Errorf("FAIL TO PREPARE UPDATE QUERY: %v", err)
 	}
+	defer stmt.Close()
 	args := make([]interface{}, len(values))
 	for i, v := range values {
 		args[i] = v
@@ -170,6 +152,9 @@ func (db *Db) delete(table, id string) (sql.Result, error) {
 		return nil, errCon
 	}
 	stmt, err := db.con.Prepare(fmt.Sprintf("DELETE FROM `%s` WHERE `ID` = ?", table))
+	if err != nil {
+		return nil, fmt.Errorf("FAIL TO PREPARE: %v", err)
+	}
 	result, err := stmt.Exec(id)
 	if err != nil {
 		return nil, fmt.Errorf("UNABLE TO DELETE OBJECT: %v", err)
@@ -202,6 +187,7 @@ func (db *Db) commit() (sql.Result, error) {
 	if err != nil {
 		return nil, fmt.Errorf("UNABLE TO PREPARE COMMIT: %v", err)
 	}
+	defer stmt.Close()
 	result, err := stmt.Exec()
 	if err != nil {
 		return nil, fmt.Errorf("UNABLE TO COMMIT TRANSACTION: %v", err)
